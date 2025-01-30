@@ -97,9 +97,11 @@ var x = setInterval(function() {
 // get url to pronoun and name
 const urlParams = new URLSearchParams(window.location.search)
 const pronoun = urlParams.get('p')
-const name = urlParams.get('n')
+const nama = urlParams.get('n')
+const namaInput = document.getElementById("nama")
+namaInput.value = nama
 const namaSambutan = document.querySelector('#namaSambutan')
-namaSambutan.innerText = `${pronoun} ${name},`
+namaSambutan.innerText = `${pronoun} ${nama},`
 
 // copy text
 function copyText(el)
