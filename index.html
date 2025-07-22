@@ -419,28 +419,63 @@
                 </div>
               </div>
             </form>
-            <div class="row mt-5 justify-content-center">
-              <div class="col-lg-12">
-                <div id="disqus_thread"></div>
-                <script>
-                  var disqus_config = function () {
-                    this.page.url = 'https://megafatayat29.github.io/mizam-wedding/';
-                    this.page.identifier = 'mizam-wedding-main';
-                  };
-                  
-                  (function() {
-                    var d = document, s = d.createElement('script');
-                    s.src = 'https://mizam-wedding.disqus.com/embed.js';
-                    s.setAttribute('data-timestamp', +new Date());
-                    (d.head || d.body).appendChild(s);
-                  })();
-                  </script>
-                  
-                <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-              </div>
-            </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section id="guest-book" class="guest-book py-5">
+      <div class="container">
+        <div class="section-title text-center mb-4">
+          <h2 class="text-pink huruf-sambung fw-bold">Buku Tamu & Doa Restu</h2>
+        </div>
+
+        <form id="commentForm" class="mb-5">
+          <div class="row">
+            <div class="col-3"></div>
+            <div class="col-6">
+              <div class="mb-3 text-start">
+                <label for="nameInput" class="form-label">Nama</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="nameInput"
+                  name="nameInput"
+                  placeholder="Nama" 
+                  required
+                />
+              </div>
+    
+              <div class="mb-3 text-start">
+                <label for="messageInput" class="form-label">Ucapan & Doa</label>
+                <textarea 
+                  id="messageInput" 
+                  class="form-control" 
+                  placeholder="Ucapan & Doa" 
+                  rows="4"
+                  required
+                ></textarea>
+              </div>
+    
+              <div class="text-center">
+                <button type="submit" class="btn btn-kirim"><i class="fas fa-fw fa-paper-plane"></i> Kirim</button>
+              </div>
+            </div>
+            <div class="col-3"></div>
+          </div>
+        </form>
+
+        <h3 class="text-center mb-3">Ucapan & Doa:</h3>
+        <div class="row justify-content-center">
+          <div class="col-12 col-md-8">
+            <ul id="commentsList" class="list-unstyled">
+            </ul>
+          </div>
+        </div>
+        <div class="text-center mt-4">
+          <button id="loadMoreBtn" class="btn btn-outline-pink">Load More</button>
+        </div>
+
       </div>
     </section>
 
@@ -491,5 +526,124 @@
   <!-- js -->
   <script src="assets/js/script.js"></script>
   <script id="dsq-count-scr" src="//mizam-wedding.disqus.com/count.js" async></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, orderBy, query, getDocs, limit, startAfter } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXXr4baZSoALF1vkM_v36kJ3xgHlndWxU",
+      authDomain: "comment-mizam-wedding.firebaseapp.com",
+      projectId: "comment-mizam-wedding",
+      storageBucket: "comment-mizam-wedding.appspot.com",
+      messagingSenderId: "684625675097",
+      appId: "1:684625675097:web:fdc577b39ebd579d0d0248",
+      measurementId: "G-Z8BX8HVJLR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const commentForm = document.getElementById("commentForm");
+    const nameInput = document.getElementById("nameInput");
+    const messageInput = document.getElementById("messageInput");
+    const commentsList = document.getElementById("commentsList");
+    const loadMoreBtn = document.getElementById("loadMoreBtn");
+
+    let lastVisible = null;
+    const COMMENTS_PER_PAGE = 5;
+
+    commentForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = nameInput.value.trim();
+      const message = messageInput.value.trim();
+      if (name && message) {
+        await addDoc(collection(db, "guestBook"), {
+          name: name,
+          message: message,
+          timestamp: serverTimestamp()
+        });
+        nameInput.value = "";
+        messageInput.value = "";
+        commentsList.innerHTML = "";
+        lastVisible = null;
+        loadComments();
+      }
+    });
+
+    async function loadComments() {
+      let q = query(
+        collection(db, "guestBook"),
+        orderBy("timestamp", "desc"),
+        limit(COMMENTS_PER_PAGE)
+      );
+
+      if (lastVisible) {
+        q = query(
+          collection(db, "guestBook"),
+          orderBy("timestamp", "desc"),
+          startAfter(lastVisible),
+          limit(COMMENTS_PER_PAGE)
+        );
+      }
+
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          // Buat elemen <li>
+          const li = document.createElement("li");
+          li.className = "comment-item d-flex align-items-start mb-3";
+
+          // Buat foto profil dummy
+          const img = document.createElement("img");
+          img.src = "assets/img/user.jpg";
+          img.style.width = "50px";
+          img.style.height = "50px";
+          img.alt = "User Avatar";
+          img.className = "rounded-circle me-3";
+
+          // Buat bubble container
+          const bubble = document.createElement("div");
+          bubble.className = "comment-bubble bg-light rounded-3 shadow-sm p-3 text-start w-100";
+
+          // Nama tamu
+          const nameElem = document.createElement("h5");
+          nameElem.className = "mb-1 fw-bold";
+          nameElem.textContent = data.name;
+
+          // Pesan tamu
+          const messageElem = document.createElement("p");
+          messageElem.className = "mb-0";
+          messageElem.textContent = data.message;
+
+          // Masukkan nama & pesan ke bubble
+          bubble.appendChild(nameElem);
+          bubble.appendChild(messageElem);
+
+          // Gabungkan ke <li>
+          li.appendChild(img);
+          li.appendChild(bubble);
+
+          // Tambahkan ke <ul>
+          commentsList.appendChild(li);
+        });
+
+        lastVisible = snapshot.docs[snapshot.docs.length - 1];
+
+        if (snapshot.size < COMMENTS_PER_PAGE) {
+          loadMoreBtn.style.display = "none";
+        } else {
+          loadMoreBtn.style.display = "inline-block";
+        }
+
+      } else {
+        loadMoreBtn.style.display = "none";
+      }
+    }
+
+    loadMoreBtn.addEventListener("click", loadComments);
+
+    loadComments();
+  </script>
 </body>
 </html>

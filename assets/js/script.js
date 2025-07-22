@@ -99,7 +99,9 @@ const urlParams = new URLSearchParams(window.location.search)
 const pronoun = urlParams.get('p')
 const nama = urlParams.get('n')
 const namaInput = document.getElementById("nama")
+const namaInput2 = document.getElementById("nameInput")
 namaInput.value = nama
+namaInput2.value = nama
 const namaSambutan = document.querySelector('#namaSambutan')
 namaSambutan.innerText = `${pronoun} ${nama},`
 
